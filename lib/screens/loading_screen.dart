@@ -1,7 +1,8 @@
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:clima/services/location.dart';
-import 'dart:convert';
+import 'package:clima/services/networking.dart';
+import 'location_screen.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
 const apiKey = 'd4443262e9cd678f74d9601592b91716';
 
@@ -13,51 +14,42 @@ class LoadingScreen extends StatefulWidget {
 }
 
 class _LoadingScreenState extends State<LoadingScreen> {
-
   double latitude;
   double longitude;
 
   @override
   void initState() {
     super.initState();
-    getLocation();
+    getLocationData();
   }
 
-  void getLocation() async {
+  void getLocationData() async {
     Location location = Location();
-
     await location.getCurrentLocation();
-
     latitude = location.latitude;
     longitude = location.longitude;
 
-    getData();
+    NetworkHelper networkHelper = NetworkHelper(
+        'https://api.openweathermap.org/data/2.5/weather?lat=${location.latitude}&lon=${location.longitude}&appid=$apiKey&units=metric');
 
-  }
+    var weatherData = await networkHelper.getData();
 
-  void getData() async {
-    http.Response response = await http.get('https://samples.openweathermap.org/data/2.5/weather?lat=$latitude&lon=$longitude&appid=$apiKey');
-
-    if (response.statusCode == 200) {
-      String data = response.body;
-
-      var decodedData = jsonDecode(data);
-
-      double temperature = decodedData['main']['temp'];
-      int condition = decodedData['weather'][0]['id'];
-      String cityName = decodedData['name'];
-
-      print(temperature);
-      print(condition);
-      print(cityName);
-
-    } else {
-      print(response.statusCode);
-    }
+    Navigator.push(context, MaterialPageRoute(builder: (context) {
+      return LocationScreen(
+        locationWeather: weatherData,
+      );
+    }));
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold();
+    return Scaffold(
+      body: Center(
+        child: SpinKitDoubleBounce(
+          color: Colors.white,
+          size: 100.0,
+        ),
+      ),
+    );
   }
 }
